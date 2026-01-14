@@ -1,0 +1,4 @@
+aws_region   = "us-east-1"
+github_token = "ghp_your_github_token_here"
+repo_url     = "github.com/your-username/your-repo"
+branch       = "main"
