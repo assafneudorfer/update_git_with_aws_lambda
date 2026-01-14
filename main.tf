@@ -43,6 +43,25 @@ data "archive_file" "lambda_zip" {
   output_path = "${path.module}/lambda_function.zip"
 }
 
+# Git Lambda Layer (provides git binary)
+# Source: https://github.com/lambci/git-lambda-layer
+data "aws_region" "current" {}
+
+locals {
+  git_layer_arns = {
+    "us-east-1"      = "arn:aws:lambda:us-east-1:553035198032:layer:git-lambda2:8"
+    "us-east-2"      = "arn:aws:lambda:us-east-2:553035198032:layer:git-lambda2:8"
+    "us-west-1"      = "arn:aws:lambda:us-west-1:553035198032:layer:git-lambda2:8"
+    "us-west-2"      = "arn:aws:lambda:us-west-2:553035198032:layer:git-lambda2:8"
+    "eu-west-1"      = "arn:aws:lambda:eu-west-1:553035198032:layer:git-lambda2:8"
+    "eu-west-2"      = "arn:aws:lambda:eu-west-2:553035198032:layer:git-lambda2:8"
+    "eu-central-1"   = "arn:aws:lambda:eu-central-1:553035198032:layer:git-lambda2:8"
+    "ap-northeast-1" = "arn:aws:lambda:ap-northeast-1:553035198032:layer:git-lambda2:8"
+    "ap-southeast-1" = "arn:aws:lambda:ap-southeast-1:553035198032:layer:git-lambda2:8"
+    "ap-southeast-2" = "arn:aws:lambda:ap-southeast-2:553035198032:layer:git-lambda2:8"
+  }
+}
+
 # Lambda Function
 resource "aws_lambda_function" "git_updater" {
   filename         = data.archive_file.lambda_zip.output_path
@@ -54,11 +73,17 @@ resource "aws_lambda_function" "git_updater" {
   timeout          = 60
   memory_size      = 256
 
+  # Add git layer
+  layers = [local.git_layer_arns[data.aws_region.current.name]]
+
   environment {
     variables = {
       GITHUB_TOKEN = var.github_token
       REPO_URL     = var.repo_url
       BRANCH       = var.branch
+      PATH         = "/opt/bin:/var/lang/bin:/usr/local/bin:/usr/bin:/bin"
+      GIT_EXEC_PATH = "/opt/libexec/git-core"
+      LD_LIBRARY_PATH = "/opt/lib"
     }
   }
 }
